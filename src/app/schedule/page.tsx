@@ -19,12 +19,20 @@ export default async function SchedulePage({
   if (q) query = query.ilike("title", `%${q}%`);
   if (category) query = query.eq("category", category);
   if (status === "completed") query = query.eq("completed", true);
-  if (status === "active") query = query.eq("completed", false);
+  if (status === "active" || status === "overdue") query = query.eq("completed", false);
 
   const ascending = sort !== "desc";
   query = query.order("start_at", { ascending });
 
-  const { data: schedules } = await query;
+  const { data: allSchedules } = await query;
+
+  const now = new Date();
+  const isOverdue = (s: { completed: boolean; end_at: string | null; start_at: string }) =>
+    !s.completed && new Date(s.end_at ?? s.start_at) < now;
+
+  const schedules = status === "overdue"
+    ? allSchedules?.filter(isOverdue)
+    : allSchedules;
 
   return (
     <div className="mx-auto max-w-2xl p-6 space-y-8">
@@ -122,6 +130,7 @@ export default async function SchedulePage({
           <select name="status" defaultValue={status ?? ""} className="rounded border px-2 py-1 bg-transparent">
             <option value="">전체</option>
             <option value="active">진행중</option>
+            <option value="overdue">지연</option>
             <option value="completed">완료</option>
           </select>
         </div>
@@ -149,8 +158,16 @@ export default async function SchedulePage({
                     "use server";
                     await toggleCompleted(s.id, !s.completed);
                   }}>
-                    <button type="submit" className="mt-1" title="완료 표시">
-                      <input type="checkbox" checked={s.completed} readOnly className="size-4" />
+                    <button
+                      type="submit"
+                      title="완료 표시"
+                      className={`mt-1 flex size-5 shrink-0 items-center justify-center rounded border text-xs ${
+                        s.completed
+                          ? "bg-green-600 border-green-600 text-white"
+                          : "border-zinc-400 dark:border-zinc-500"
+                      }`}
+                    >
+                      {s.completed ? "✓" : ""}
                     </button>
                   </form>
                   <div>
@@ -161,6 +178,9 @@ export default async function SchedulePage({
                       >
                         {s.category ?? "일반"}
                       </span>
+                      {isOverdue(s) && (
+                        <span className="rounded bg-red-600 px-2 py-0.5 text-xs text-white">지연</span>
+                      )}
                       <h3 className={`font-semibold ${s.completed ? "line-through text-zinc-400" : ""}`}>
                         {s.title}
                       </h3>

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { updateSchedule } from "../../actions";
+import { CATEGORIES } from "../../categories";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -47,6 +48,22 @@ export default async function EditSchedulePage({
             <input name="end_at" type="datetime-local"
               defaultValue={toLocalInputValue(schedule.end_at)}
               className="w-full rounded border px-3 py-2" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1 space-y-1">
+            <label className="text-sm">카테고리</label>
+            <select name="category" defaultValue={schedule.category ?? "일반"}
+              className="w-full rounded border px-3 py-2 bg-transparent">
+              {CATEGORIES.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm">색상</label>
+            <input name="color" type="color" defaultValue={schedule.color ?? "#6b7280"}
+              className="h-10 w-16 rounded border px-1 py-1" />
           </div>
         </div>
         <div className="flex gap-3">

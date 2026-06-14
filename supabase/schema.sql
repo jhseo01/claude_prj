@@ -8,8 +8,18 @@ create table if not exists schedules (
   start_at timestamptz not null,
   end_at timestamptz,
   file_path text,
+  file_paths text[] not null default '{}',
+  category text not null default '일반',
+  color text not null default '#6b7280',
+  completed boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- If you previously ran an older version of this schema, run these to add the new columns:
+alter table schedules add column if not exists file_paths text[] not null default '{}';
+alter table schedules add column if not exists category text not null default '일반';
+alter table schedules add column if not exists color text not null default '#6b7280';
+alter table schedules add column if not exists completed boolean not null default false;
 
 alter table schedules enable row level security;
 

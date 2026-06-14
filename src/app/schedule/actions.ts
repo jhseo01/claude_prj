@@ -128,6 +128,28 @@ export async function deleteSchedule(id: string, filePaths: string[]) {
   revalidatePath("/schedule/calendar");
 }
 
+export async function bulkDeleteSchedules(formData: FormData) {
+  const supabase = await createClient();
+  const ids = formData.getAll("ids") as string[];
+  if (ids.length === 0) return;
+
+  const { data: rows } = await supabase
+    .from("schedules")
+    .select("file_paths")
+    .in("id", ids);
+
+  const filePaths = (rows ?? []).flatMap((r) => r.file_paths ?? []);
+  if (filePaths.length > 0) {
+    await supabase.storage.from("attachments").remove(filePaths);
+  }
+
+  const { error } = await supabase.from("schedules").delete().in("id", ids);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/schedule");
+  revalidatePath("/schedule/calendar");
+}
+
 export async function getFileUrl(filePath: string) {
   const supabase = await createClient();
   const { data, error } = await supabase.storage

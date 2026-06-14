@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { addSchedule, deleteSchedule, getFileUrl, toggleCompleted } from "./actions";
+import { addSchedule, bulkDeleteSchedules, deleteSchedule, getFileUrl, toggleCompleted } from "./actions";
 import { logout } from "../login/actions";
 import { CATEGORIES, colorForCategory } from "./categories";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -71,7 +71,7 @@ export default async function SchedulePage({
           <div className="flex-1 space-y-1">
             <label className="text-sm">카테고리</label>
             <select name="category" defaultValue="일반"
-              className="w-full rounded border px-3 py-2 bg-transparent">
+              className="w-full rounded border px-3 py-2 bg-transparent dark:bg-zinc-900 dark:text-white">
               {CATEGORIES.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>
               ))}
@@ -87,7 +87,7 @@ export default async function SchedulePage({
           <div className="flex-1 space-y-1">
             <label className="text-sm">반복</label>
             <select name="repeat" defaultValue="none"
-              className="w-full rounded border px-3 py-2 bg-transparent">
+              className="w-full rounded border px-3 py-2 bg-transparent dark:bg-zinc-900 dark:text-white">
               <option value="none">반복 안 함</option>
               <option value="daily">매일</option>
               <option value="weekly">매주</option>
@@ -118,7 +118,7 @@ export default async function SchedulePage({
         </div>
         <div className="space-y-1">
           <label className="text-sm block">카테고리</label>
-          <select name="category" defaultValue={category ?? ""} className="rounded border px-2 py-1 bg-transparent">
+          <select name="category" defaultValue={category ?? ""} className="rounded border px-2 py-1 bg-transparent dark:bg-zinc-900 dark:text-white">
             <option value="">전체</option>
             {CATEGORIES.map((c) => (
               <option key={c.name} value={c.name}>{c.name}</option>
@@ -127,7 +127,7 @@ export default async function SchedulePage({
         </div>
         <div className="space-y-1">
           <label className="text-sm block">상태</label>
-          <select name="status" defaultValue={status ?? ""} className="rounded border px-2 py-1 bg-transparent">
+          <select name="status" defaultValue={status ?? ""} className="rounded border px-2 py-1 bg-transparent dark:bg-zinc-900 dark:text-white">
             <option value="">전체</option>
             <option value="active">진행중</option>
             <option value="overdue">지연</option>
@@ -136,7 +136,7 @@ export default async function SchedulePage({
         </div>
         <div className="space-y-1">
           <label className="text-sm block">정렬</label>
-          <select name="sort" defaultValue={sort ?? "asc"} className="rounded border px-2 py-1 bg-transparent">
+          <select name="sort" defaultValue={sort ?? "asc"} className="rounded border px-2 py-1 bg-transparent dark:bg-zinc-900 dark:text-white">
             <option value="asc">날짜 오름차순</option>
             <option value="desc">날짜 내림차순</option>
           </select>
@@ -144,9 +144,12 @@ export default async function SchedulePage({
         <button className="rounded border px-3 py-1">적용</button>
       </form>
 
-      <div className="space-y-3">
+      <form action={bulkDeleteSchedules} className="space-y-3">
         {schedules?.length === 0 && (
           <p className="text-zinc-500">등록된 일정이 없습니다.</p>
+        )}
+        {schedules && schedules.length > 0 && (
+          <button className="text-sm text-red-600 underline">선택한 일정 삭제</button>
         )}
         {schedules?.map((s) => {
           const filePaths: string[] = s.file_paths ?? (s.file_path ? [s.file_path] : []);
@@ -154,22 +157,19 @@ export default async function SchedulePage({
             <div key={s.id} className="rounded border p-4 space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <form action={async () => {
-                    "use server";
-                    await toggleCompleted(s.id, !s.completed);
-                  }}>
-                    <button
-                      type="submit"
-                      title="완료 표시"
-                      className={`mt-1 flex size-5 shrink-0 items-center justify-center rounded border text-xs ${
-                        s.completed
-                          ? "bg-green-600 border-green-600 text-white"
-                          : "border-zinc-400 dark:border-zinc-500"
-                      }`}
-                    >
-                      {s.completed ? "✓" : ""}
-                    </button>
-                  </form>
+                  <input type="checkbox" name="ids" value={s.id} className="mt-2 size-4" />
+                  <button
+                    type="submit"
+                    formAction={toggleCompleted.bind(null, s.id, !s.completed)}
+                    title="완료 표시"
+                    className={`mt-1 flex size-5 shrink-0 items-center justify-center rounded border text-xs ${
+                      s.completed
+                        ? "bg-green-600 border-green-600 text-white"
+                        : "border-zinc-400 dark:border-zinc-500"
+                    }`}
+                  >
+                    {s.completed ? "✓" : ""}
+                  </button>
                   <div>
                     <div className="flex items-center gap-2">
                       <span
@@ -178,8 +178,12 @@ export default async function SchedulePage({
                       >
                         {s.category ?? "일반"}
                       </span>
-                      {isOverdue(s) && (
+                      {isOverdue(s) ? (
                         <span className="rounded bg-red-600 px-2 py-0.5 text-xs text-white">지연</span>
+                      ) : s.completed ? (
+                        <span className="rounded bg-zinc-500 px-2 py-0.5 text-xs text-white">완료</span>
+                      ) : (
+                        <span className="rounded bg-blue-600 px-2 py-0.5 text-xs text-white">진행중</span>
                       )}
                       <h3 className={`font-semibold ${s.completed ? "line-through text-zinc-400" : ""}`}>
                         {s.title}
@@ -201,18 +205,19 @@ export default async function SchedulePage({
                 </div>
                 <div className="flex gap-3 shrink-0">
                   <Link href={`/schedule/edit/${s.id}`} className="text-sm text-blue-600 underline">수정</Link>
-                  <form action={async () => {
-                    "use server";
-                    await deleteSchedule(s.id, filePaths);
-                  }}>
-                    <button className="text-sm text-red-600 underline">삭제</button>
-                  </form>
+                  <button
+                    type="submit"
+                    formAction={deleteSchedule.bind(null, s.id, filePaths)}
+                    className="text-sm text-red-600 underline"
+                  >
+                    삭제
+                  </button>
                 </div>
               </div>
             </div>
           );
         })}
-      </div>
+      </form>
     </div>
   );
 }

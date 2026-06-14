@@ -33,6 +33,7 @@ export default async function SchedulePage({
         <div className="flex items-center gap-3 text-sm">
           <ThemeToggle />
           <Link href="/schedule/calendar" className="underline">캘린더</Link>
+          <Link href="/account" className="underline">계정설정</Link>
           <span className="text-zinc-500">{user?.email}</span>
           <form action={logout}>
             <button className="underline">로그아웃</button>
@@ -72,6 +73,23 @@ export default async function SchedulePage({
             <label className="text-sm">색상</label>
             <input name="color" type="color" defaultValue="#6b7280"
               className="h-10 w-16 rounded border px-1 py-1" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1 space-y-1">
+            <label className="text-sm">반복</label>
+            <select name="repeat" defaultValue="none"
+              className="w-full rounded border px-3 py-2 bg-transparent">
+              <option value="none">반복 안 함</option>
+              <option value="daily">매일</option>
+              <option value="weekly">매주</option>
+              <option value="monthly">매월</option>
+            </select>
+          </div>
+          <div className="flex-1 space-y-1">
+            <label className="text-sm">반복 횟수</label>
+            <input name="repeat_count" type="number" min={1} max={52} defaultValue={1}
+              className="w-full rounded border px-3 py-2" />
           </div>
         </div>
         <div className="space-y-1">

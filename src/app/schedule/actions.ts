@@ -15,6 +15,8 @@ export async function addSchedule(formData: FormData) {
   const endAt = formData.get("end_at") as string;
   const category = (formData.get("category") as string) || "일반";
   const color = (formData.get("color") as string) || "#6b7280";
+  const repeat = (formData.get("repeat") as string) || "none";
+  const repeatCount = Math.min(Math.max(parseInt((formData.get("repeat_count") as string) || "1", 10), 1), 52);
   const files = formData.getAll("files") as File[];
 
   const filePaths: string[] = [];
@@ -31,16 +33,34 @@ export async function addSchedule(formData: FormData) {
     }
   }
 
-  const { error } = await supabase.from("schedules").insert({
-    user_id: user.id,
-    title,
-    description,
-    start_at: startAt,
-    end_at: endAt || null,
-    category,
-    color,
-    file_paths: filePaths,
+  const occurrences = repeat === "none" ? 1 : repeatCount;
+  const offsetMs = (n: number) => {
+    if (repeat === "daily") return n * 24 * 60 * 60 * 1000;
+    if (repeat === "weekly") return n * 7 * 24 * 60 * 60 * 1000;
+    if (repeat === "monthly") {
+      const d = new Date(startAt);
+      d.setMonth(d.getMonth() + n);
+      return d.getTime() - new Date(startAt).getTime();
+    }
+    return 0;
+  };
+
+  const rows = Array.from({ length: occurrences }, (_, i) => {
+    const start = new Date(new Date(startAt).getTime() + offsetMs(i));
+    const end = endAt ? new Date(new Date(endAt).getTime() + offsetMs(i)) : null;
+    return {
+      user_id: user.id,
+      title,
+      description,
+      start_at: start.toISOString(),
+      end_at: end ? end.toISOString() : null,
+      category,
+      color,
+      file_paths: i === 0 ? filePaths : [],
+    };
   });
+
+  const { error } = await supabase.from("schedules").insert(rows);
 
   if (error) throw new Error(error.message);
 

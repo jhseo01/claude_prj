@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { addSchedule, deleteSchedule, getFileUrl } from "./actions";
 import { logout } from "../login/actions";
+import Link from "next/link";
 
 export default async function SchedulePage() {
   const supabase = await createClient();
@@ -69,12 +70,15 @@ export default async function SchedulePage() {
                   <FileLink filePath={s.file_path} />
                 )}
               </div>
-              <form action={async () => {
-                "use server";
-                await deleteSchedule(s.id, s.file_path);
-              }}>
-                <button className="text-sm text-red-600 underline">삭제</button>
-              </form>
+              <div className="flex gap-3 shrink-0">
+                <Link href={`/schedule/edit/${s.id}`} className="text-sm text-blue-600 underline">수정</Link>
+                <form action={async () => {
+                  "use server";
+                  await deleteSchedule(s.id, s.file_path);
+                }}>
+                  <button className="text-sm text-red-600 underline">삭제</button>
+                </form>
+              </div>
             </div>
           </div>
         ))}

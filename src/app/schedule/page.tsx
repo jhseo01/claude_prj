@@ -157,12 +157,12 @@ export default async function SchedulePage({
             <div key={s.id} className="rounded border p-4 space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <input type="checkbox" name="ids" value={s.id} className="mt-2 size-4" />
+                  <input type="checkbox" name="ids" value={s.id} title="삭제 선택" className="mt-2 size-4" />
                   <button
                     type="submit"
                     formAction={toggleCompleted.bind(null, s.id, !s.completed)}
                     title="완료 표시"
-                    className={`mt-1 flex size-5 shrink-0 items-center justify-center rounded border text-xs ${
+                    className={`mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border text-xs ${
                       s.completed
                         ? "bg-green-600 border-green-600 text-white"
                         : "border-zinc-400 dark:border-zinc-500"

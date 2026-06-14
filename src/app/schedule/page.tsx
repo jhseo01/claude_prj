@@ -43,7 +43,8 @@ export default async function SchedulePage() {
         </div>
         <div className="space-y-1">
           <label className="text-sm">첨부파일 (선택)</label>
-          <input name="file" type="file" className="w-full" />
+          <input name="file" type="file"
+            className="w-full rounded border px-3 py-2 file:mr-3 file:rounded file:border-0 file:bg-black file:px-3 file:py-1 file:text-white dark:file:bg-white dark:file:text-black" />
         </div>
         <button className="rounded bg-black px-4 py-2 text-white dark:bg-white dark:text-black">
           추가
